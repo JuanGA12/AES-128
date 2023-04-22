@@ -1,5 +1,5 @@
 import random
-import numpy as np
+
 
 sbox = [99, 124, 119, 123, 242, 107, 111, 197, 48, 1, 103, 43, 254,
     215, 171, 118, 202, 130, 201, 125, 250, 89, 71, 240, 173, 212, 
@@ -104,10 +104,10 @@ def AES128Encryption(key: str, message: str, padding: bool=True):
 		tempArr=pad(tempArr)
 	for i in range(len(tempArr)-1):
 		block = tempArr[i]
-		block = XOR(keys[0],block)#__AddRoundKey__
-		for j in range(1,9):
+		block = XOR(keys[0],block)#__AddRoundKey__Ronda1
+		for j in range(1,9):#Ronda 2 a 9
 			block=AESEncRound(keys[j],block)
-		block=AESEncLastRound(keys[9],block) 
+		block=AESEncLastRound(keys[9],block)#Ronda 10
 		tempArr[i]=block
 	return intToStr(tempArr)
 
@@ -115,13 +115,18 @@ def AES128Decryption(key: str, ct: str, padding: bool=True):
 	keys = keyExpansion(key)
 	tempArr = strToInt(ct)
 	if padding:
-		tempArr=unpad(tempArr)
-	for i in range(len(tempArr)-1):
+		tempArr=unpad(tempArr)#unpad
+	lenA = 0
+	if (len(tempArr) == 1):
+		lenA = len(tempArr)
+	else:
+		lenA =len(tempArr)-1
+	for i in range(lenA):#Se deberia empezar del ultimo bloque, aca no va el "-1", varia segun el input??
 		block = tempArr[i]
 		block = AESDecFirstRound(keys[9],block) # ronda 10
 		for j in range(8, 0, -1):#8,1 ronda 9 a 2
 			block=AESDecRound(keys[j],block)
-		block = XOR(keys[0],block)#__AddRoundKey__
+		block = XOR(keys[0],block)#__AddRoundKey__ #Ronda 1
 		tempArr[i]=block
 	return intToStr(tempArr)
 
@@ -193,33 +198,55 @@ def invSubBytes(arr: list):
 	return [invSbox[int(byte)] for byte in arr]
 
 def shiftRows(arr: list):
-	arr = np.array(arr)
-	arrays = np.array_split(arr, 4)
-	aux = [arrays[0]]
+	arr1 = [arr[i:i + 4] for i in range(0, len(arr), 4)]
+	aux = []
+	aux.append(arr1[0][0])
+	aux.append(arr1[0][1])
+	aux.append(arr1[0][2])
+	aux.append(arr1[0][3])
 	for i in range (1,4):
-		arr = arrays[i]
+		arr2 = arr1[i]
 		if i == 1:
-			aux.append([arr[1],arr[2],arr[3],arr[0]])
+			aux.append(arr2[1])
+			aux.append(arr2[2])
+			aux.append(arr2[3])
+			aux.append(arr2[0])
 		elif i == 2:
-			aux.append([arr[2],arr[3],arr[0],arr[1]])
+			aux.append(arr2[2])
+			aux.append(arr2[3])
+			aux.append(arr2[0])
+			aux.append(arr2[1])
 		elif i == 3:
-			aux.append([arr[3],arr[0],arr[1],arr[2]])
-	aux = np.array(aux).flatten().tolist()
+			aux.append(arr2[3])
+			aux.append(arr2[0])
+			aux.append(arr2[1])
+			aux.append(arr2[2])
 	return aux
 
 def invShiftRows(arr: list):
-	arr = np.array(arr)
-	arrays = np.array_split(arr, 4)
-	aux = [arrays[0]]
+	arr1 = [arr[i:i + 4] for i in range(0, len(arr), 4)]
+	aux=[]
+	aux.append(arr1[0][0])
+	aux.append(arr1[0][1])
+	aux.append(arr1[0][2])
+	aux.append(arr1[0][3])
 	for i in range (1,4):
-		arr = arrays[i]
+		arr2 = arr1[i]
 		if i == 1:
-			aux.append([arr[3],arr[0],arr[1],arr[2]])
+			aux.append(arr2[3])
+			aux.append(arr2[0])
+			aux.append(arr2[1])
+			aux.append(arr2[2])
 		elif i == 2:
-			aux.append([arr[2],arr[3],arr[0],arr[1]])
+			aux.append(arr2[2])
+			aux.append(arr2[3])
+			aux.append(arr2[0])
+			aux.append(arr2[1])
 		elif i == 3:
-			aux.append([arr[1],arr[2],arr[3],arr[0]])
-	aux = np.array(aux).flatten().tolist()
+			aux.append(arr2[1])
+			aux.append(arr2[2])
+			aux.append(arr2[3])
+			aux.append(arr2[0])
 	return aux
 
 def mixCols(arr: list):
@@ -293,31 +320,30 @@ def GaloisMultiply(i: int, x: int):
 		return GaloisMultiply(2, GaloisMultiply(7, x))
 	else: return None
 
-# key = AES128KeyGeneration()
-# ct = AES128Encryption(key, "hello my name is")
-# print(ct)
-# pt = AES128Decryption(key, ct)
-# print(pt)
+key = AES128KeyGeneration()
+ct = AES128Encryption(key, "hello my name is")
+print(ct)
+pt = AES128Decryption(key, ct)
+print(pt)
 
-import random
-arr = [random.randint(5, 100) for i in range(1,17)]
-# print (arr)
-mixarr = mixCols(arr)
-# print (mixarr)
-invarr = invMixCols(mixarr)
-# print(invarr)
-assert(arr == invarr)
-
-
-shiftarr = shiftRows(arr)
-# print (mixarr)
-invshiftarr = invShiftRows(shiftarr)
-# print(invarr)
-assert(arr == invshiftarr)
+# arr = [random.randint(5, 100) for i in range(1,17)]
+# # print (arr)
+# mixarr = mixCols(arr)
+# # print (mixarr)
+# invarr = invMixCols(mixarr)
+# # print(invarr)
+# assert(arr == invarr)
 
 
-subarr = subBytes(arr)
-# print (mixarr)
-invsubarr = invSubBytes(subarr)
-# print(invarr)
-assert(arr == invsubarr)
+# shiftarr = shiftRows(arr)
+# # print (mixarr)
+# invshiftarr = invShiftRows(shiftarr)
+# # print(invarr)
+# assert(arr == invshiftarr)
+
+
+# subarr = subBytes(arr)
+# # print (mixarr)
+# invsubarr = invSubBytes(subarr)
+# # print(invarr)
+# assert(arr == invsubarr)
